@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
   public class Stat {
         //data from threads
         private static AtomicInteger requestNum = new AtomicInteger(0);
-        private static AtomicInteger requestSuccessNum = new AtomicInteger(0);                
+        private static AtomicInteger requestSuccessNum = new AtomicInteger(0);
 
         public static void increaseRequestNum() { requestNum.addAndGet(1); }
         public static int getRequestNum() { return requestNum.get();}
@@ -91,5 +91,16 @@ import java.util.concurrent.atomic.AtomicInteger;
             int listSize = sortedLatencyList.size();
             
             return sortedLatencyList.get((int)(listSize*0.95));
+        }
+        
+        private static List<Long> responseTimeList = Collections.synchronizedList(new ArrayList<Long>());
+        public static void addResponseTime(Long responseTime) { 
+            synchronized (responseTimeList) {
+            responseTimeList.add(responseTime);
+            }
+        }
+        
+        public static List<Long> getResponseTimeList() {
+            return responseTimeList;
         }
     }
