@@ -65,7 +65,7 @@ public class App{
      * @throws java.util.concurrent.ExecutionException
      */
     public static void main(String[] args) throws InterruptedException, ExecutionException{
-        int maxThread = 64;
+        int maxThread = 64;//default: 64
         System.out.println("client maxthread: " + maxThread + ";");
         
         String BASE_URI = "http://localhost:8080/wearableDeviceServer/webresources";
@@ -76,10 +76,10 @@ public class App{
         
         int day = 1; //NOTE: only test the day 1 now
         
-        userPopulation = 100000; 
+        userPopulation = 1000000; //default: 100,000 
         System.out.println("userPolulation: " + userPopulation);
         
-        int numberOfTestsPerPhase = 25; //TODO: default 100
+        int numberOfTestsPerPhase = 100; //default 100
         System.out.println("numberOfTestsPerPhase: " + numberOfTestsPerPhase);
         
         
