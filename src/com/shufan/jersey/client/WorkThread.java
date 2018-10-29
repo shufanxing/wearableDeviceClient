@@ -5,8 +5,8 @@
  */
 package com.shufan.jersey.client;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -31,15 +31,19 @@ public class WorkThread extends Thread {
     private WebTarget webTarget = null;
     private Stat stat = null;
     private CountDownLatch _latch = null;
+    ConcurrentLinkedQueue<Long> timeQueue = null;
+    ConcurrentLinkedQueue<Long> latencyQueue = null;
     private int phaseStart;
     private int phaseLength;
     private int iterNum;
     private int day;
 
-    public WorkThread(WebTarget webTarget, Stat stat, CountDownLatch _latch, int phaseStart, int phaseLength, int iterNum, int day) {
+    public WorkThread(WebTarget webTarget, Stat stat, CountDownLatch _latch, ConcurrentLinkedQueue<Long> timeQueue, ConcurrentLinkedQueue<Long> latencyQueue, int phaseStart, int phaseLength, int iterNum, int day) {
         this.webTarget = webTarget;
         this.stat = stat;
         this._latch = _latch;
+        this.timeQueue = timeQueue;
+        this.latencyQueue = latencyQueue;
         this.phaseStart = phaseStart;
         this.phaseLength = phaseLength;
         this.iterNum = iterNum;
@@ -90,8 +94,8 @@ public class WorkThread extends Thread {
                 }
                 long endTimePost1 = System.currentTimeMillis();
 
-                stat.addResponseTime(endTimePost1);
-                stat.addLatency(endTimePost1 - startTimePost1);
+                timeQueue.add(endTimePost1);
+                latencyQueue.add(endTimePost1 - startTimePost1);
 
                 //post 2
                 stat.increaseRequestNum();
@@ -110,8 +114,8 @@ public class WorkThread extends Thread {
                 }
                 long endTimePost2 = System.currentTimeMillis();
 
-                stat.addResponseTime(endTimePost2);
-                stat.addLatency(endTimePost2 - startTimePost2);
+                timeQueue.add(endTimePost2);
+                latencyQueue.add(endTimePost2 - startTimePost2);
 
                 //get 1
                 stat.increaseRequestNum();
@@ -130,8 +134,8 @@ public class WorkThread extends Thread {
                 }
                 long endTimeGet1 = System.currentTimeMillis();
 
-                stat.addResponseTime(endTimeGet1);
-                stat.addLatency(endTimeGet1 - startTimeGet1);
+                timeQueue.add(endTimeGet1);
+                latencyQueue.add(endTimeGet1 - startTimeGet1);
 
                 //get 2
                 stat.increaseRequestNum();
@@ -150,8 +154,8 @@ public class WorkThread extends Thread {
                 }
                 long endTimeGet2 = System.currentTimeMillis();
 
-                stat.addResponseTime(endTimeGet2);
-                stat.addLatency(endTimeGet2 - startTimeGet2);
+                timeQueue.add(endTimeGet2);
+                latencyQueue.add(endTimeGet2 - startTimeGet2);
 
                 //post 3
                 stat.increaseRequestNum();
@@ -170,8 +174,8 @@ public class WorkThread extends Thread {
                 }
                 long endTimePost3 = System.currentTimeMillis();
 
-                stat.addResponseTime(endTimePost3);
-                stat.addLatency(endTimePost3 - startTimePost3);
+                timeQueue.add(endTimePost3);
+                latencyQueue.add(endTimePost3 - startTimePost3);
 
             }
         } catch (Throwable t) {
