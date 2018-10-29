@@ -1,4 +1,4 @@
-                                                                    /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -8,8 +8,6 @@ package com.shufan.jersey.client;
 import java.util.concurrent.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.client.ClientBuilder;
@@ -20,41 +18,36 @@ import javax.ws.rs.core.MediaType;
  *
  * @author macbook
  */
+public class App {
 
-public class App{
-    
 //    private static final String BASE_URI = "http://34.221.90.157:8080/Ec2JerseyServer/webresources/";
-
-    
 //    private static final String BASE_URI = "https://ldl841pti9.execute-api.us-west-2.amazonaws.com/Prod/";
 //    private static final String PATH = "lambdatest";
-    
     public static final int maxStepCount = 5000; //0 -> maxStepCount
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
-    
-    private static List<Thread> threadList = new ArrayList<>();
-    
-    private static void executeWorkThreads(WebTarget webTarget, Stat stat, int threadCount, int phaseStart, int phaseLength, int numberOfTestsperPhase, int day) {
+
+    private static void executeWorkThreads(WebTarget webTarget, Stat stat, CountDownLatch _latch, int threadCount, int phaseStart, int phaseLength, int numberOfTestsperPhase, int day) throws InterruptedException {
         int iterNum = numberOfTestsperPhase * phaseLength;
-        
-        for(int i=0; i<threadCount; i++) {
-            Thread r = new WorkThread(webTarget, stat, phaseStart, phaseLength, iterNum, day);
-            threadList.add(r);
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            Thread r = new WorkThread(webTarget, stat, _latch, phaseStart, phaseLength, iterNum, day);
+            executor.execute(r);
         }
-        for(Thread t: threadList) {
-            t.start();
-        }
-        for(Thread t : threadList){
-            try{
-                t.join();
-            }catch (InterruptedException e) {
-                System.out.println("Error: " + e.getMessage());
+
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
+                executor.shutdownNow();
             }
-            
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
         }
+
     }
-    
+
     public static Integer deleteAll(WebTarget webTarget) {
         return webTarget.path("/deleteAll").request(MediaType.TEXT_PLAIN).post(Entity.entity(null, MediaType.TEXT_PLAIN), Integer.class);
     }
@@ -64,30 +57,28 @@ public class App{
      * @throws java.lang.InterruptedException
      * @throws java.util.concurrent.ExecutionException
      */
-    public static void main(String[] args) throws InterruptedException, ExecutionException{
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
         int maxThread = 64;//default: 64
         System.out.println("client maxthread: " + maxThread + ";");
-        
+
         String BASE_URI = "http://localhost:8080/wearableDeviceServer/webresources";
         System.out.println("url: " + BASE_URI);
-        
-        dayNumber = 1; 
+
+        dayNumber = 1;
         System.out.println("dayNumber: " + dayNumber);
-        
+
         int day = 1; //NOTE: only test the day 1 now
-        
+
         userPopulation = 1000000; //default: 100,000 
         System.out.println("userPolulation: " + userPopulation);
-        
+
         int numberOfTestsPerPhase = 100; //default 100
         System.out.println("numberOfTestsPerPhase: " + numberOfTestsPerPhase);
-        
-        
+
         Client client = ClientBuilder.newClient();
-//        WebTarget webTarget = client.target(BASE_URI).path("");
         WebTarget webTarget = client.target(BASE_URI);
         Stat stat = new Stat();
-        
+
         //clean old records in table;
         try {
             Integer deletedRecordsNum = deleteAll(webTarget);
@@ -95,62 +86,69 @@ public class App{
         } catch (Exception e) {
             System.out.println("Failure in delete all: " + e.getMessage());
         }
-        
+
         long startTimeTotal = System.currentTimeMillis();
         System.out.println("Client start...... Time: " + startTimeTotal);
-        
+
         //warmup
         long startTimeWarmup = System.currentTimeMillis();
         System.out.println("Warmup phase: All threads running...");
-        executeWorkThreads(webTarget, stat, maxThread/10, 0, 3, numberOfTestsPerPhase, 1);
+        int warmupThreadNum = maxThread / 10;
+        CountDownLatch warmupLatch = new CountDownLatch(Math.max(warmupThreadNum / 2, 1));
+        executeWorkThreads(webTarget, stat, warmupLatch, warmupThreadNum, 0, 3, numberOfTestsPerPhase, 1);
+        warmupLatch.await();
         long endTimeWarmup = System.currentTimeMillis();
         long wallTimeWarmup = endTimeWarmup - startTimeWarmup;
-        System.out.println("Warmup phase complete: Time " + wallTimeWarmup/1000.0 + " seconds");
-        
+        System.out.println("Warmup phase complete: Time " + wallTimeWarmup / 1000.0 + " seconds");
+
         //loading
-        threadList.clear();
         long startTimeLoading = System.currentTimeMillis();
         System.out.println("Loading phase: All threads running...");
-        executeWorkThreads(webTarget, stat, maxThread/2, 3, 5, numberOfTestsPerPhase, 1);
+        int loadingThreadNum = maxThread / 2;
+        CountDownLatch loadingLatch = new CountDownLatch(Math.max(loadingThreadNum / 2, 1));
+        executeWorkThreads(webTarget, stat, loadingLatch, loadingThreadNum, 3, 5, numberOfTestsPerPhase, 1);
+        loadingLatch.await();
         long endTimeLoading = System.currentTimeMillis();
         long wallTimeLoading = endTimeLoading - startTimeLoading;
-        System.out.println("Loading phase complete: Time " + wallTimeLoading/1000.0 + " seconds");
-        
+        System.out.println("Loading phase complete: Time " + wallTimeLoading / 1000.0 + " seconds");
+
         //peak
-        threadList.clear();
         System.out.println("Peak phase: All threads running...");
         long startTimePeak = System.currentTimeMillis();
-        executeWorkThreads(webTarget, stat, maxThread, 8, 11, numberOfTestsPerPhase, 1);
+        int peakThreadNum = maxThread;
+        CountDownLatch peakLatch = new CountDownLatch(Math.max(peakThreadNum / 2, 1));
+        executeWorkThreads(webTarget, stat, peakLatch, peakThreadNum, 8, 11, numberOfTestsPerPhase, 1);
+        peakLatch.await();
         long endTimePeak = System.currentTimeMillis();
-        long wallTimePeak = endTimePeak - startTimePeak;  
-        System.out.println("Peak phase complete: Time " + wallTimePeak/1000.0 + " seconds");
+        long wallTimePeak = endTimePeak - startTimePeak;
+        System.out.println("Peak phase complete: Time " + wallTimePeak / 1000.0 + " seconds");
 
         //cooldown
-        threadList.clear();
         System.out.println("Cooldown phase: All threads running...");
         long startTimeCooldown = System.currentTimeMillis();
-        executeWorkThreads(webTarget, stat, maxThread/4, 19, 5, numberOfTestsPerPhase, 1);
+        int cooldownThreadNum = maxThread / 4;
+        CountDownLatch cooldownLatch = new CountDownLatch(cooldownThreadNum);
+        executeWorkThreads(webTarget, stat, cooldownLatch, cooldownThreadNum, 19, 5, numberOfTestsPerPhase, 1);
+        cooldownLatch.await();
         long endTimeCooldown = System.currentTimeMillis();
-        long wallTimeCooldown = endTimeCooldown - startTimeCooldown; 
-        System.out.println("Cooldown phase complete: Time " + wallTimeCooldown/1000.0 + " seconds");
+        long wallTimeCooldown = endTimeCooldown - startTimeCooldown;
+        System.out.println("Cooldown phase complete: Time " + wallTimeCooldown / 1000.0 + " seconds");
 
         long endTimeTotal = System.currentTimeMillis();
         long wallTimeTotal = endTimeTotal - startTimeTotal;
-        
+
         System.out.println("=======================================");
         System.out.println("Total number of requests sent: " + Stat.getRequestNum());
         System.out.println("Total number of Successful responses: " + Stat.getRequestSuccessNum());
-        System.out.println("Test Wall Time: " + wallTimeTotal/1000.0 + " seconds");
+        System.out.println("Test Wall Time: " + wallTimeTotal / 1000.0 + " seconds");
 
-        NumberFormat formatter = new DecimalFormat("#0.0");  
-        System.out.println("Overall throughput accross all phases:" + formatter.format(Stat.getRequestNum()/(wallTimeTotal/1000.0)));
+        NumberFormat formatter = new DecimalFormat("#0.0");
+        System.out.println("Overall throughput accross all phases:" + formatter.format(Stat.getRequestNum() / (wallTimeTotal / 1000.0)));
         System.out.println("Mean latency for all requests: " + formatter.format(Stat.getMeanLatency()) + " milliseconds");
         System.out.println("Median latency for all requests: " + formatter.format(Stat.getMedianLatency()) + " milliseconds");
         System.out.println("99th percentile latency for all requests: " + Stat.get99Latency() + " milliseconds");
         System.out.println("95th percentile latency for all requests: " + Stat.get95Latency() + " milliseconds");
-        
+
         ExcelWriter.write(Stat.getResponseTimeList(), startTimeTotal, "./temp/resultStat.xlsx");
     }
-    
- 
 }
