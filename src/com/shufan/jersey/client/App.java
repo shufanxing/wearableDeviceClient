@@ -71,7 +71,9 @@ public class App {
             int maxThread = 64;//default: 64
             System.out.println("client maxthread: " + maxThread + ";");
 
-            String BASE_URI = "http://localhost:8080/wearableDeviceServer/webresources";
+//            String BASE_URI = "http://localhost:8080/wearableDeviceServer/webresources";
+            String BASE_URI = "http://ec2-34-220-160-231.us-west-2.compute.amazonaws.com:8080/WearableDeviceServer/webresources";
+
             System.out.println("url: " + BASE_URI);
 
             dayNumber = 1;
