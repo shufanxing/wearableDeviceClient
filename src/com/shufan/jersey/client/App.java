@@ -26,6 +26,8 @@ public class App {
     public static final int maxStepCount = 5000; //0 -> maxStepCount
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
+    
+    public static int overlapFactor = 20;
 
     public static String timeFile = "./temp/resp_times.csv";
     public static String latencyFile = "./temp/latencies.csv";
@@ -68,9 +70,10 @@ public class App {
             int maxThread = 64;//default: 64
             System.out.println("client maxthread: " + maxThread + ";");
 
-            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";
+//            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";
 //            String BASE_URI = "http://localhost:8084/wd/webresources";
-//            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
+            
+            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
 
 //            String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
 
@@ -120,7 +123,7 @@ public class App {
             long startTimeWarmup = System.currentTimeMillis();
             System.out.println("Warmup phase: All threads running...");
             int warmupThreadNum = maxThread / 10;
-            CountDownLatch warmupLatch = new CountDownLatch(Math.max(warmupThreadNum / 2, 1));
+            CountDownLatch warmupLatch = new CountDownLatch(Math.max(warmupThreadNum / overlapFactor, 1));
             executeWorkThreads(webTarget, stat, warmupLatch, timeQueue, latencyQueue, warmupThreadNum, 0, 3, numberOfTestsPerPhase, 1);
             warmupLatch.await();
             long endTimeWarmup = System.currentTimeMillis();
@@ -131,7 +134,7 @@ public class App {
             long startTimeLoading = System.currentTimeMillis();
             System.out.println("Loading phase: All threads running...");
             int loadingThreadNum = maxThread / 2;
-            CountDownLatch loadingLatch = new CountDownLatch(Math.max(loadingThreadNum / 2, 1));
+            CountDownLatch loadingLatch = new CountDownLatch(Math.max(loadingThreadNum / overlapFactor, 1));
             executeWorkThreads(webTarget, stat, loadingLatch, timeQueue, latencyQueue, loadingThreadNum, 3, 5, numberOfTestsPerPhase, 1);
             loadingLatch.await();
             long endTimeLoading = System.currentTimeMillis();
@@ -142,7 +145,7 @@ public class App {
             System.out.println("Peak phase: All threads running...");
             long startTimePeak = System.currentTimeMillis();
             int peakThreadNum = maxThread;
-            CountDownLatch peakLatch = new CountDownLatch(Math.max(peakThreadNum / 2, 1));
+            CountDownLatch peakLatch = new CountDownLatch(Math.max(peakThreadNum / overlapFactor, 1));
             executeWorkThreads(webTarget, stat, peakLatch, timeQueue, latencyQueue, peakThreadNum, 8, 11, numberOfTestsPerPhase, 1);
             peakLatch.await();
             long endTimePeak = System.currentTimeMillis();
