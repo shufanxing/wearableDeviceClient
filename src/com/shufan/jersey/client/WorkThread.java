@@ -52,15 +52,15 @@ public class WorkThread extends Thread {
 
     public Response postStepCount(WebTarget webTarget, int userID, int day, int timeInterval, int stepCount) {
         return webTarget.path("/" + userID + "/" + day + "/" + timeInterval + "/" + stepCount)
-                .request(MediaType.TEXT_PLAIN).post(Entity.entity(null, MediaType.TEXT_PLAIN));
+                .request(MediaType.APPLICATION_JSON).post(Entity.entity(null, MediaType.TEXT_PLAIN));
     }
 
-    public Integer getCurrent(WebTarget webTarget, int userID) {
-        return webTarget.path("/current/" + userID).request(MediaType.TEXT_PLAIN).get(Integer.class);
+    public Response getCurrent(WebTarget webTarget, int userID) {
+        return webTarget.path("/current/" + userID).request(MediaType.APPLICATION_JSON).get(Response.class);
     }
 
-    public Integer getSingle(WebTarget webTarget, int userID, int day) {
-        return webTarget.path("/single/" + userID + "/" + day).request(MediaType.TEXT_PLAIN).get(Integer.class);
+    public Response getSingle(WebTarget webTarget, int userID, int day) {
+        return webTarget.path("/single/" + userID + "/" + day).request(MediaType.APPLICATION_JSON).get(Response.class);
     }
 
     @Override
@@ -89,8 +89,12 @@ public class WorkThread extends Thread {
                     System.out.println("Failure in post 1: " + e.getMessage());
                 }
 
-                if (post1Res.getStatus() >= 200 && post1Res.getStatus() < 300) { //TODO: change
+                if (post1Res!=null && post1Res.getStatus() >= 200 && post1Res.getStatus() < 300) { //TODO: change
                     stat.increaseRequestSuccessNum();
+                }else if(post1Res==null){
+                    System.out.println("Failure in post 1: null" );
+                }else{
+                    System.out.println("Failure in post 1:" + post1Res.getStatus() );
                 }
                 long endTimePost1 = System.currentTimeMillis();
 
@@ -109,8 +113,12 @@ public class WorkThread extends Thread {
                     System.out.println("Failure in post 2: " + e.getMessage());
                 }
 
-                if (post1Res.getStatus() >= 200 && post1Res.getStatus() < 300) { //TODO: change
+                if (post2Res!=null && post2Res.getStatus() >= 200 && post2Res.getStatus() < 300) { //TODO: change
                     stat.increaseRequestSuccessNum();
+                }else if(post2Res==null){
+                    System.out.println("Failure in post 2: null" );
+                }else{
+                    System.out.println("Failure in post 2:" + post2Res.getStatus() );
                 }
                 long endTimePost2 = System.currentTimeMillis();
 
@@ -121,7 +129,7 @@ public class WorkThread extends Thread {
                 stat.increaseRequestNum();
                 long startTimeGet1 = System.currentTimeMillis();
 
-                Integer get1Res = -1;
+                Response get1Res = null;
 
                 try {
                     get1Res = getCurrent(webTarget, userIDs[0]);
@@ -129,8 +137,12 @@ public class WorkThread extends Thread {
                     System.out.println("Failure in get 1: " + e.getMessage());
                 }
 
-                if (get1Res != -1) { //TODO: change
+                if (get1Res!=null && get1Res.getStatus() >= 200 && get1Res.getStatus() < 300) { //TODO: change
                     stat.increaseRequestSuccessNum();
+                }else if(get1Res==null){
+                    System.out.println("Failure in get 1: null" );
+                }else{
+                    System.out.println("Failure in get 1:" + get1Res.getStatus() );
                 }
                 long endTimeGet1 = System.currentTimeMillis();
 
@@ -141,16 +153,20 @@ public class WorkThread extends Thread {
                 stat.increaseRequestNum();
                 long startTimeGet2 = System.currentTimeMillis();
 
-                Integer get2Res = -1;
+                Response get2Res = null;
 
                 try {
                     get2Res = getCurrent(webTarget, userIDs[1]);
                 } catch (Exception e) {
-                    System.out.println("Failure in get 1: " + e.getMessage());
+                    System.out.println("Failure in get 2: " + e.getMessage());
                 }
 
-                if (get2Res != -1) { //TODO: change
+                if (get2Res!=null && get2Res.getStatus() >= 200 && get2Res.getStatus() < 300) { //TODO: change
                     stat.increaseRequestSuccessNum();
+                }else if(get2Res==null){
+                    System.out.println("Failure in get 2: null" );
+                }else{
+                    System.out.println("Failure in get 2:" + get2Res.getStatus() );
                 }
                 long endTimeGet2 = System.currentTimeMillis();
 
@@ -169,8 +185,12 @@ public class WorkThread extends Thread {
                     System.out.println("Failure in post 3: " + e.getMessage());
                 }
 
-                if (post1Res.getStatus() >= 200 && post1Res.getStatus() < 300) { //TODO: change
+                if (post3Res!=null && post3Res.getStatus() >= 200 && post3Res.getStatus() < 300) { //TODO: change
                     stat.increaseRequestSuccessNum();
+                }else if(post3Res==null){
+                    System.out.println("Failure in post 3: null" );
+                }else{
+                    System.out.println("Failure in post 3:" + get2Res.getStatus() );
                 }
                 long endTimePost3 = System.currentTimeMillis();
 

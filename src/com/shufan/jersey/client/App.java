@@ -16,16 +16,13 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  *
  * @author macbook
  */
 public class App {
-
-//    private static final String BASE_URI = "http://34.221.90.157:8080/Ec2JerseyServer/webresources/";
-//    private static final String BASE_URI = "https://ldl841pti9.execute-api.us-west-2.amazonaws.com/Prod/";
-//    private static final String PATH = "lambdatest";
     public static final int maxStepCount = 5000; //0 -> maxStepCount
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
@@ -56,8 +53,8 @@ public class App {
 
     }
 
-    public static Integer deleteAll(WebTarget webTarget) {
-        return webTarget.path("/deleteAll").request(MediaType.TEXT_PLAIN).post(Entity.entity(null, MediaType.TEXT_PLAIN), Integer.class);
+    public static Response deleteAll(WebTarget webTarget) {
+        return webTarget.path("/deleteAll").request(MediaType.APPLICATION_JSON).post(Entity.entity(null, MediaType.TEXT_PLAIN));
     }
 
     /**
@@ -71,8 +68,13 @@ public class App {
             int maxThread = 64;//default: 64
             System.out.println("client maxthread: " + maxThread + ";");
 
-//            String BASE_URI = "http://localhost:8080/wearableDeviceServer/webresources";
-            String BASE_URI = "http://ec2-34-220-160-231.us-west-2.compute.amazonaws.com:8080/WearableDeviceServer/webresources";
+            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";
+//            String BASE_URI = "http://localhost:8084/wd/webresources";
+//            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
+
+//            String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
+
+//            String BASE_URI = "http://wd-lb-983955425.us-west-2.elb.amazonaws.com:8080/WearableDeviceServer/webresources";
 
             System.out.println("url: " + BASE_URI);
 
@@ -92,11 +94,18 @@ public class App {
             Stat stat = new Stat();
 
             //clean old records in table;
+            Response  deletedAllRes = null;
             try {
-                Integer deletedRecordsNum = deleteAll(webTarget);
-                System.out.println("deleted old records in table:" + deletedRecordsNum);
+                deletedAllRes = deleteAll(webTarget);
+                String s = deletedAllRes.readEntity(String.class);
+                System.out.println("deleted old records in table:" + s);
             } catch (Exception e) {
                 System.out.println("Failure in delete all: " + e.getMessage());
+            }
+            
+            if (deletedAllRes == null || deletedAllRes.getStatus() < 200 || deletedAllRes.getStatus() >= 300) { //TODO: change
+            
+                System.out.println("Failure in post 3: " );
             }
             
             //start work            
