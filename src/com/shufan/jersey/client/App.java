@@ -28,7 +28,7 @@ public class App {
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
 
-    public static int overlapFactor = 20;
+    public static int overlapFactor = 2;
 
     public static String timeFile = "./temp/resp_times.csv";
     public static String latencyFile = "./temp/latencies.csv";
@@ -66,9 +66,9 @@ public class App {
     public static void main(String[] args) {
 //            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";  
 
-//            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
+            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
 
-        String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
+//        String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
 
 //            String BASE_URI = "http://wd-lb-983955425.us-west-2.elb.amazonaws.com:8080/WearableDeviceServer/webresources";
         if (args.length >= 1) {
