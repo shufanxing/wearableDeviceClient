@@ -15,6 +15,7 @@ import java.util.List;
  * @author frg
  */
 public class LatencyFileReader {
+
     private static FileReader fileReader;
     private static BufferedReader bufferedReader;
 
@@ -25,7 +26,7 @@ public class LatencyFileReader {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         String line = null;
 
         while (true) {
@@ -42,6 +43,12 @@ public class LatencyFileReader {
                 break;
             }
         }
+        try {
+            bufferedReader.close();
+            fileReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
+
 }

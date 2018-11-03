@@ -23,17 +23,18 @@ import javax.ws.rs.core.Response;
  * @author macbook
  */
 public class App {
+
     public static final int maxStepCount = 5000; //0 -> maxStepCount
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
-    
+
     public static int overlapFactor = 20;
 
     public static String timeFile = "./temp/resp_times.csv";
     public static String latencyFile = "./temp/latencies.csv";
 
-    private static void executeWorkThreads(WebTarget webTarget, Stat stat, CountDownLatch _latch, 
-            ConcurrentLinkedQueue<Long> timeQueue,  ConcurrentLinkedQueue<Long> latencyQueue, 
+    private static void executeWorkThreads(WebTarget webTarget, Stat stat, CountDownLatch _latch,
+            ConcurrentLinkedQueue<Long> timeQueue, ConcurrentLinkedQueue<Long> latencyQueue,
             int threadCount, int phaseStart, int phaseLength, int numberOfTestsperPhase, int day) throws InterruptedException {
         int iterNum = numberOfTestsperPhase * phaseLength;
 
@@ -63,41 +64,46 @@ public class App {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+//            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";  
+
+//            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
+
+        String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
+
+//            String BASE_URI = "http://wd-lb-983955425.us-west-2.elb.amazonaws.com:8080/WearableDeviceServer/webresources";
+        if (args.length >= 1) {
+            BASE_URI = args[0];
+        }
+        System.out.println("url: " + BASE_URI);
+
+        int maxThread = 64;//default: 64
+        if (args.length >= 2) {
+            maxThread = Integer.parseInt(args[1]);
+        }
+        System.out.println("client maxthread: " + maxThread + ";");
+
+        int numberOfTestsPerPhase = 100; //default 100
+        if (args.length >= 3) {
+            numberOfTestsPerPhase = Integer.parseInt(args[2]);
+        }
+        System.out.println("numberOfTestsPerPhase: " + numberOfTestsPerPhase);
+
         try {
             ConcurrentLinkedQueue<Long> timeQueue = new ConcurrentLinkedQueue<>();
             ConcurrentLinkedQueue<Long> latencyQueue = new ConcurrentLinkedQueue<>();
-            
-            int maxThread = 64;//default: 64
-            System.out.println("client maxthread: " + maxThread + ";");
-
-//            String BASE_URI = "http://localhost:8080/wearableDeviceEc2Server/webresources";
-//            String BASE_URI = "http://localhost:8084/wd/webresources";
-            
-            String BASE_URI = "http://localhost:8081/WearableDevice/rest/tomcat";
-
-//            String BASE_URI = "http://18.236.75.89:8080/WearableDevice/rest/tomcat";
-
-//            String BASE_URI = "http://wd-lb-983955425.us-west-2.elb.amazonaws.com:8080/WearableDeviceServer/webresources";
-
-            System.out.println("url: " + BASE_URI);
 
             dayNumber = 1;
             System.out.println("dayNumber: " + dayNumber);
 
-            int day = 1; //NOTE: only test the day 1 now
-
             userPopulation = 1000000; //default: 100,000 
             System.out.println("userPolulation: " + userPopulation);
-
-            int numberOfTestsPerPhase = 100; //default 100
-            System.out.println("numberOfTestsPerPhase: " + numberOfTestsPerPhase);
 
             Client client = ClientBuilder.newClient();
             WebTarget webTarget = client.target(BASE_URI);
             Stat stat = new Stat();
 
             //clean old records in table;
-            Response  deletedAllRes = null;
+            Response deletedAllRes = null;
             try {
                 deletedAllRes = deleteAll(webTarget);
                 String s = deletedAllRes.readEntity(String.class);
@@ -105,16 +111,19 @@ public class App {
             } catch (Exception e) {
                 System.out.println("Failure in delete all: " + e.getMessage());
             }
-            
+
             if (deletedAllRes == null || deletedAllRes.getStatus() < 200 || deletedAllRes.getStatus() >= 300) { //TODO: change
-            
-                System.out.println("Failure in post 3: " );
+
+                System.out.println("Failure in post 3: ");
             }
             
+            if (deletedAllRes != null) {
+		deletedAllRes.close();
+            }
+
             //start work            
             long startTimeTotal = System.currentTimeMillis();
             System.out.println("Client start...... Time: " + startTimeTotal);
-
 
             new Thread(new TimeFileWriter(timeFile, timeQueue, startTimeTotal)).start();//The thread of monitoring, continuously from the queue read and write data to a file
             new Thread(new LatencyFileWriter(latencyFile, latencyQueue)).start();//The thread of monitoring, continuously from the queue read and write data to a file
@@ -165,7 +174,7 @@ public class App {
 
             long endTimeTotal = System.currentTimeMillis();
             long wallTimeTotal = endTimeTotal - startTimeTotal;
-            
+
             //stop the work of file writer
             timeQueue.add(-1L);
             latencyQueue.add(-1L);
@@ -177,10 +186,10 @@ public class App {
 
             NumberFormat formatter = new DecimalFormat("#0.0");
             System.out.println("Overall throughput accross all phases:" + formatter.format(Stat.getRequestNum() / (wallTimeTotal / 1000.0)));
-            
+
             //calculate latency stat
             LatencyFileReader.read(latencyFile, Stat.getLatencyList());
-            
+
             System.out.println("Mean latency for all requests: " + formatter.format(Stat.getMeanLatency()) + " milliseconds");
             System.out.println("Median latency for all requests: " + formatter.format(Stat.getMedianLatency()) + " milliseconds");
             System.out.println("99th percentile latency for all requests: " + Stat.get99Latency() + " milliseconds");
