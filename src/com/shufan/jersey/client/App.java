@@ -28,7 +28,7 @@ public class App {
     public static int userPopulation; //1 -> userPopulation
     public static int dayNumber; // 1 -> dayNumber
 
-    public static int overlapFactor = 2;
+    public static int overlapFactor = 10;
 
     public static String timeFile = "./temp/resp_times.csv";
     public static String latencyFile = "./temp/latencies.csv";

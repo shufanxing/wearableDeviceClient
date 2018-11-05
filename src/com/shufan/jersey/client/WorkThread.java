@@ -259,7 +259,7 @@ public class WorkThread extends Thread {
                 }
                 if (!success5) {
                     if (post3Res == null) {
-                        System.out.println("Failure in post 3: null");
+                        System.out.println("Failure in post 3: " + errorMsg5);
                     } else {
                         System.out.println("Failure in post 3:" + post3Res.getStatus());
                     }
